@@ -109,7 +109,7 @@ const getAllOrders = async (req, res) => {
   try {
     const user = req.userId;
 
-    const cartItems = await Order.find({ user: user })
+    const cartItems = await Order.find({ user: user,status:"pending" })
       .populate("product")
       .populate("user");
 
