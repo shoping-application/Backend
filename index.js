@@ -11,9 +11,8 @@ const userCartRoutes=require("./routes/userCartRoutes")
 
 app.use(
   cors({
-    origin: "*",
-    // methods: ["GET", "POST", "PUT", "DELETE"],
-    // credentials: true,
+    origin: "https://swiftmartshopping.netlify.app/",
+    credentials: true,
   })
 );
 app.use(express.json());
