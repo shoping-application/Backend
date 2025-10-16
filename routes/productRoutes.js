@@ -2,7 +2,7 @@ const express = require("express");
 const middleware =require("../middleware/middleware")
 const router = express.Router();
 
-const {createProduct , getProduct, updateProduct, createOrder,verifyPayment}=require("../service/productService")
+const {createProduct , getProduct, updateProduct,searchProducts, createOrder,verifyPayment}=require("../service/productService")
 
 router.post("/create-product",middleware,createProduct)
 router.get("/get-product/:catagory",getProduct)
@@ -11,5 +11,7 @@ router.post("/create-order",createOrder)
 router.post("/verify-payment", verifyPayment);
 
 router.get("/get-product/:catagory",getProduct)
+
+router.get("/search",searchProducts)
 
 module.exports=router

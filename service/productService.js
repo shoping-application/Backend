@@ -200,4 +200,28 @@ const verifyPayment = async (req, res) => {
   }
 };
 
-module.exports = { createProduct, getProduct, updateProduct, createOrder, verifyPayment };
+const searchProducts = async (req, res) => {
+  try {
+    const query = req.query.query?.trim();
+
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const products = await Product.find({
+      name: { $regex: query, $options: "i" },
+      status: "active", 
+    });
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      products,
+    });
+  } catch (error) {
+    console.error("Search Error:", error);
+    res.status(500).json({ message: "Server error while searching products" });
+  }
+}
+
+module.exports = { createProduct,searchProducts, getProduct, updateProduct, createOrder, verifyPayment };
