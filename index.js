@@ -33,3 +33,8 @@ app.use("/api/user", userRoutes);
 app.use("/api/address", addressRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/userCart", userCartRoutes);
+
+
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
