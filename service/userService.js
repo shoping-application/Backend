@@ -3,7 +3,10 @@ const User = require("../models/user");
 const { sendEmail } = require("../config/mail");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-require("dotenv")
+const { oauth2client } = require("../config/googleConfig");
+const axios = require("axios");
+
+require("dotenv");
 
 // POST /api/auth/signup
 const signup = async (req, res) => {
@@ -102,9 +105,9 @@ const forgotPassword = async (req, res) => {
     user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    const Frontend_Url =process.env.Frontend_Url
+    const Frontend_Url = process.env.Frontend_Url;
 
-   const resetURL = `${Frontend_Url}/reseat-password?token=${resetToken}`;
+    const resetURL = `${Frontend_Url}/reseat-password?token=${resetToken}`;
 
     await sendEmail(
       email,
@@ -128,7 +131,7 @@ const forgotPassword = async (req, res) => {
 // ===================== RESET PASSWORD =====================
 const resetPassword = async (req, res) => {
   try {
-    const { newPassword,token } = req.body;
+    const { newPassword, token } = req.body;
 
     // 1. Find user by token and check expiry
     const user = await User.findOne({
@@ -211,10 +214,88 @@ const updateUserDetail = async (req, res) => {
   }
 };
 
+const googleSignup = async (req, res) => {
+  const { code } = req.body;
+
+  try {
+    // 1. Get OAuth tokens from Google
+    const googleRes = await oauth2client.getToken(code);
+    oauth2client.setCredentials(googleRes.tokens);
+
+    // 2. Fetch user info from Google API
+    const userRes = await axios.get(
+      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`
+    );
+
+    const { email, name, picture } = userRes.data; // Added 'picture' for the photo field
+
+    const existingUser = await User.findOne({ email, name });
+    if (existingUser) {
+      if (!email) {
+        return res.status(400).json({ message: "Email and password required" });
+      }
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+
+      const token = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" }
+      );
+
+      return res.status(200).json({
+        success: true,
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          phoneNumber: user.phoneNumber,
+        },
+      });
+    }
+
+    const newUser = await User.create({
+      name: name,
+      email,
+    });
+
+    const user = await User.findOne({ email, name });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    return res.status(200).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phoneNumber: user.phoneNumber,
+      },
+    });
+  } catch (error) {
+    console.error("Google Signup Error:", error);
+    return res.status(500).send({ success: false, message: "Server Error" });
+  }
+};
 
 module.exports = {
   signup,
   login,
+  googleSignup,
   forgotPassword,
   resetPassword,
   getUserDetail,

@@ -205,7 +205,13 @@ const searchProducts = async (req, res) => {
     const query = req.query.query?.trim();
 
     if (!query) {
-      return res.status(400).json({ message: "Search query is required" });
+      // return res.status(400).json({ message: "Search query is required" });
+      const products = await Product.find({ status: "active" });
+      return res.status(200).json({
+        success: true,
+        count: products.length,
+        products,
+      });
     }
 
     const products = await Product.find({
